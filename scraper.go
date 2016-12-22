@@ -2,6 +2,7 @@ package main
 
 import (
   "fmt"
+  "os"
   "io/ioutil"
   "net/http"
   "strings"
@@ -68,6 +69,11 @@ func findPageWithName(startingPage, endingPage string, path []map[string]string,
 func main() {
   startingPage := "https://en.wikipedia.org/wiki/Pikachu"
   endingPage := "https://en.wikipedia.org/wiki/Central_processing_unit"
+
+  if (len(os.Args) == 3) { // Command line arguments
+    startingPage = os.Args[1]
+    endingPage = os.Args[2]
+  }
 
   pageFound := make(chan []map[string]string)
 
