@@ -32,7 +32,9 @@ func extractUrlsAndNames(html string) (wikipediaUrlsAndNames map[string]string) 
       fullUrl := wikipediaUrlPrefix + url
       name := untrimmedAnchor[strings.Index(untrimmedAnchor, ">") + 1:strings.Index(untrimmedAnchor, "<")]
 
-      wikipediaUrlsAndNames[fullUrl] = name
+      if (!strings.Contains(name, "<") || name == "Read") {
+        wikipediaUrlsAndNames[fullUrl] = name
+      }
     }
   }
 
@@ -47,51 +49,17 @@ func findPageWithName(startingPage, endingPage string, path []map[string]string,
   copy(temp, path)
 
   for url, name := range urls {
-    temp = append(path, map[string]string {startingPage: name})
     select {
       case <- pageFound:
         return
       default:
+        temp = append(path, map[string]string {startingPage: name})
         if (url == endingPage) {
           pageFound <- temp
+          close(pageFound)
+          return
         } else {
           go findPageWithName(url, endingPage, temp, pageFound)
-        }
-    }
-  }
-}
-
-func extractUrls(html string) (wikipediaUrls []string) {
-  wikipediaUrlPrefix := "https://en.wikipedia.org"
-
-  untrimmedAnchors := strings.Split(html, "<a href=\"")[1:]
-  for _, untrimmedAnchor := range untrimmedAnchors {
-    url := untrimmedAnchor[:strings.Index(untrimmedAnchor, "\"")]
-
-    if (strings.HasPrefix(url, "/wiki") && !strings.Contains(url, ":")) {
-      wikipediaUrls = append(wikipediaUrls, wikipediaUrlPrefix + url)
-    }
-  }
-
-  return wikipediaUrls
-}
-
-// This function has an annoying amount of parameters...
-func findPage(startingPage, endingPage string, path []string, pageFound chan []string) {
-  pageHTML := getUrl(startingPage)
-  urls := extractUrls(pageHTML)
-
-  path = append(path, startingPage)
-
-  for _, url := range urls {
-    select {
-      case <- pageFound:
-        return
-      default:
-        if (url == endingPage) {
-          pageFound <- path
-        } else {
-          go findPage(url, endingPage, path, pageFound)
         }
     }
   }
@@ -100,17 +68,6 @@ func findPage(startingPage, endingPage string, path []string, pageFound chan []s
 func main() {
   startingPage := "https://en.wikipedia.org/wiki/Pikachu"
   endingPage := "https://en.wikipedia.org/wiki/Central_processing_unit"
-
-  // pageFound := make(chan []string)
-  //
-  // go findPage(startingPage, endingPage, []string{}, pageFound)
-  // found := <- pageFound
-  //
-  // found = append(found, endingPage)
-  //
-  // for index, url := range found {
-  //   fmt.Println("Step", index, ":", url)
-  // }
 
   pageFound := make(chan []map[string]string)
 
@@ -122,7 +79,12 @@ func main() {
   for index, urlAndNextStep := range found {
     for url, nextStep := range urlAndNextStep {
       fmt.Println("===== Step", (index + 1), "=====")
-      fmt.Println("Start at", url, "and click", nextStep)
+      fmt.Println("Start at:", url)
+      if (nextStep == "") {
+        fmt.Println("Click on: [Error - Unknown Next Step]")
+      } else {
+        fmt.Println("Click on:", nextStep)
+      }
     }
   }
 
