@@ -35,9 +35,12 @@ func extractUrls(html string) (wikipediaUrls []string) {
   return wikipediaUrls
 }
 
-func findPage(startingPage, endingPage string, depth int, pageFound chan int) {
+// This function has an annoying amount of parameters...
+func findPage(startingPage, endingPage string, path []string, pageFound chan []string) {
   pageHTML := getUrl(startingPage)
   urls := extractUrls(pageHTML)
+
+  path = append(path, startingPage)
 
   for _, url := range urls {
     select {
@@ -45,10 +48,9 @@ func findPage(startingPage, endingPage string, depth int, pageFound chan int) {
         return
       default:
         if (url == endingPage) {
-          fmt.Println(url)
-          pageFound <- depth
+          pageFound <- path
         } else {
-          go findPage(url, endingPage, depth + 1, pageFound)
+          go findPage(url, endingPage, path, pageFound)
         }
     }
   }
@@ -58,10 +60,14 @@ func main() {
   startingPage := "https://en.wikipedia.org/wiki/Pikachu"
   endingPage := "https://en.wikipedia.org/wiki/Central_processing_unit"
 
-  pageFound := make(chan int)
+  pageFound := make(chan []string)
 
-  go findPage(startingPage, endingPage, 0, pageFound)
+  go findPage(startingPage, endingPage, []string{}, pageFound)
   found := <- pageFound
 
-  fmt.Println(found)
+  found = append(found, endingPage)
+
+  for index, url := range found {
+    fmt.Println("Step", index, ":", url)
+  }
 }
