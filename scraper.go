@@ -76,16 +76,20 @@ func main() {
   go findPageWithName(startingPage, endingPage, path, pageFound)
   found := <- pageFound
 
+  fmt.Println("===== Begin  =====")
+  fmt.Println("- Begin at:", startingPage)
   for index, urlAndNextStep := range found {
     for url, nextStep := range urlAndNextStep {
       fmt.Println("===== Step", (index + 1), "=====")
-      fmt.Println("Start at:", url)
+      fmt.Println("- Start at:", url)
       if (nextStep == "") {
-        fmt.Println("Click on: [Error - Unknown Next Step]")
+        fmt.Println("- Click on: [Error - Unknown Next Step]")
       } else {
-        fmt.Println("Click on:", nextStep)
+        fmt.Println("- Click on:", nextStep)
       }
     }
   }
+  fmt.Println("===== End    =====")
+  fmt.Println("- End at:", endingPage)
 
 }
